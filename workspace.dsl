@@ -59,6 +59,32 @@ workspace {
 
         user -> smart_home "Управление устройствами умного дома"
         sensor -> smart_home "Обновление актуальных данных о температуре в доме" "REST HTTP:8080"
+
+        deploymentEnvironment "Production" {
+            deploymentNode "User Server" {
+                containerInstance smart_home.user_service
+            }
+
+            deploymentNode "Temperature Server" {
+                containerInstance smart_home.temperature_service
+            }
+
+            deploymentNode "databases" {
+                deploymentNode "Database Server 1" {
+                    containerInstance smart_home.user_database
+                }
+
+                deploymentNode "Database Server 2" {
+                    containerInstance smart_home.smarthome_database
+                    instances 3
+                }
+
+                deploymentNode "Cache Server" {
+                    containerInstance smart_home.user_cache
+                }
+            }
+            
+        }
     }
 
     views {
