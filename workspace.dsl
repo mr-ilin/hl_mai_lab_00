@@ -5,6 +5,7 @@ workspace {
     # включаем режим с иерархической системой идентификаторов
     !identifiers hierarchical
 
+    !docs documentation
     !adrs decisions
     # Модель архитектуры
     model {
@@ -14,6 +15,7 @@ workspace {
             structurizr.groupSeparator "/"
         }
         
+
         # Описание компонент модели
         user = person "Пользователь умного дома"
         sensor     = softwareSystem "Датчик температуры"
@@ -68,9 +70,15 @@ workspace {
 
             deploymentNode "Temperature Server" {
                 containerInstance smart_home.temperature_service
+                properties {
+                    "cpu" "4"
+                    "ram" "256Gb"
+                    "hdd" "4Tb"
+                }
             }
 
             deploymentNode "databases" {
+     
                 deploymentNode "Database Server 1" {
                     containerInstance smart_home.user_database
                 }
@@ -90,6 +98,11 @@ workspace {
 
     views {
         themes default
+
+        properties { 
+            structurizr.tooltips true
+        }
+
 
         !script groovy {
             workspace.views.createDefaultViews()
