@@ -5,6 +5,7 @@ workspace {
     # включаем режим с иерархической системой идентификаторов
     !identifiers hierarchical
 
+    !adrs decisions
     # Модель архитектуры
     model {
 
