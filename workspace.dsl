@@ -41,7 +41,7 @@ workspace {
             messenger_service -> messenger_cache "Получение/обновление данных"
             messenger_service -> messenger_database "Получение/обновление данных"
 
-            user -> messenger_service "Регистрация нового пользователя"
+            user -> messenger_service "Получение/обновление данных"
         }
 
         user -> messenger "Получение/обновление данных о сообщениях"
@@ -80,48 +80,54 @@ workspace {
 
         # Пользователи
 
-        dynamic messenger "UC01" "Добавление нового пользователя" {
+        dynamic messenger "UC01" "Создание нового пользователя" {
             autoLayout
             user -> messenger.messenger_service "Создать нового пользователя (POST /user)"
             messenger.messenger_service -> messenger.messenger_database "Сохранить данные о пользователе" 
         }
 
-        dynamic messenger "UC02" "Удаление пользователя" {
-            autoLayout
-            user -> messenger.messenger_service "Удалить нового пользователя (DELETE /user)"
-            messenger.messenger_service -> messenger.messenger_database "Удалить данные о пользователе" 
-        }
-
-        dynamic messenger "UC03" "Поиск пользователя" {
+        dynamic messenger "UC02" "Поиск пользователя (по логину / маске ФИО)" {
             autoLayout
             user -> messenger.messenger_service "Поиск пользователя (GET /user)"
             messenger.messenger_service -> messenger.messenger_database "Поиск пользователя в БД" 
         }
 
-        # Чаты
-
-        dynamic messenger "UC04" "Получение чатов пользователя" {
+        dynamic messenger "UC03" "Удаление пользователя" {
             autoLayout
-            user -> messenger.messenger_service "Получение списка чатов (GET /chats)"
-            messenger.messenger_service -> messenger.messenger_database "Получение пагинированных данных о чатах" 
+            user -> messenger.messenger_service "Удалить пользователя (DELETE /user)"
+            messenger.messenger_service -> messenger.messenger_database "Удалить данные о пользователе" 
         }
 
-         dynamic messenger "UC05" "Создание чата" {
+        # Чаты
+
+        dynamic messenger "UC04" "Создание чата" {
             autoLayout
-            user -> messenger.messenger_service "Создать новый чат(POST /chat)"
+            user -> messenger.messenger_service "Создать новый чат (POST /chat)"
             messenger.messenger_service -> messenger.messenger_database "Сохранить данные о чате" 
+        }
+
+        dynamic messenger "UC05" "Добавление пользователя в чат" {
+            autoLayout
+            user -> messenger.messenger_service "Добавить в чат (POST /chat/add_user)"
+            messenger.messenger_service -> messenger.messenger_database "Сохранить данные о чате" 
+        }
+
+        dynamic messenger "UC06" "Получение чатов пользователя" {
+            autoLayout
+            user -> messenger.messenger_service "Получение списка чатов (GET /user/chats)"
+            messenger.messenger_service -> messenger.messenger_database "Получение пагинированных данных о чатах" 
         }
 
         # Сообщения
 
-        dynamic messenger "UC06" "Получение сообщений чата" {
+        dynamic messenger "UC07" "Загрузка сообщений группового чата" {
             autoLayout
             user -> messenger.messenger_service "Получение сообщений (GET /messages)"
             messenger.messenger_service -> messenger.messenger_database "Получение пагинированных данных о сообщениях" 
         }
-        dynamic messenger "UC07" "Отправка сообщения в чат" {
+        dynamic messenger "UC08" "Добавление сообщения" {
             autoLayout
-            user -> messenger.messenger_service "Отправка сообщения в чат (POST /message)"
+            user -> messenger.messenger_service "Добавление сообщения в чат (POST /message)"
             messenger.messenger_service -> messenger.messenger_database "Сохранить данные о сообщении" 
         }
 
