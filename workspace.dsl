@@ -1,12 +1,10 @@
 workspace {
-    name "Умный дом"
-    description "Простая система управления умного дома с базовыми функциями контроля состояния атмосферы в помещении"
+    name "Мессенджер"
+    description "Система мессенджера"
 
     # включаем режим с иерархической системой идентификаторов
     !identifiers hierarchical
 
-    !docs documentation
-    !adrs decisions
     # Модель архитектуры
     model {
 
@@ -17,79 +15,50 @@ workspace {
         
 
         # Описание компонент модели
-        user = person "Пользователь умного дома"
-        sensor     = softwareSystem "Датчик температуры"
-        smart_home = softwareSystem "Умный дом" {
-            description "Сервер управления умным домом"
+        user = person "Пользователь мессенджера"
 
-            user_service = container "User service" {
-                description "Сервис управления пользователями"
-            }
+        messenger = softwareSystem "Мессенджер" {
+            description "Сервер мессенджера"
 
-            temperature_service = container "Temperature service" {
-                description "Сервис мониторинга и управления температурой в доме"
+            messenger_service = container "Messenger service" {
+                description "Сервис мессенджера"
             }
 
             group "Слой данных" {
-                user_database = container "User Database" {
-                    description "База данных с пользователями"
+                messenger_database = container "Database" {
+                    description "База данных"
                     technology "PostgreSQL 15"
                     tags "database"
                 }
 
-                user_cache = container "User Cache" {
-                    description "Кеш пользовательских данных для ускорения аутентификации"
-                    technology "PostgreSQL 15"
-                    tags "database"
-                }
-
-                smarthome_database = container "Smarthome Database" {
-                    description "База данных для хранения информации с сенсоров"
-                    technology "MongoDB 5"
+                messenger_cache = container "Cache" {
+                    description "Кеш"
+                    technology "Redis"
                     tags "database"
                 }
             }
 
-            user_service -> user_cache "Получение/обновление данных о пользователях" "TCP 6379"
-            user_service -> user_database "Получение/обновление данных о пользователях" "TCP 5432"
+            messenger_service -> messenger_cache "Получение/обновление данных"
+            messenger_service -> messenger_database "Получение/обновление данных"
 
-            temperature_service -> smarthome_database "Получение/обновление данных о температуре" "TCP 27018"
-            temperature_service -> user_service "Аутентификация пользователя" "REST HTTP 443"
-
-            user -> user_service "Регистрация нового пользователя" "REST HTTP:8080"
-            sensor -> temperature_service "Получение данных о температуре в доме" "REST HTTP:8080"
+            user -> messenger_service "Регистрация нового пользователя"
         }
 
-        user -> smart_home "Управление устройствами умного дома"
-        sensor -> smart_home "Обновление актуальных данных о температуре в доме" "REST HTTP:8080"
+        user -> messenger "Получение/обновление данных о сообщениях"
 
         deploymentEnvironment "Production" {
             deploymentNode "User Server" {
-                containerInstance smart_home.user_service
-            }
-
-            deploymentNode "Temperature Server" {
-                containerInstance smart_home.temperature_service
-                properties {
-                    "cpu" "4"
-                    "ram" "256Gb"
-                    "hdd" "4Tb"
-                }
+                containerInstance messenger.messenger_service
             }
 
             deploymentNode "databases" {
      
-                deploymentNode "Database Server 1" {
-                    containerInstance smart_home.user_database
-                }
-
-                deploymentNode "Database Server 2" {
-                    containerInstance smart_home.smarthome_database
-                    instances 3
+                deploymentNode "Database Server" {
+                    containerInstance messenger.messenger_database
                 }
 
                 deploymentNode "Cache Server" {
-                    containerInstance smart_home.user_cache
+                    containerInstance messenger.messenger_cache
                 }
             }
             
@@ -109,31 +78,52 @@ workspace {
             workspace.views.views.findAll { it instanceof com.structurizr.view.ModelView }.each { it.enableAutomaticLayout() }
         }
 
-        dynamic smart_home "UC01" "Добавление нового пользователя" {
+        # Пользователи
+
+        dynamic messenger "UC01" "Добавление нового пользователя" {
             autoLayout
-            user -> smart_home.user_service "Создать нового пользователя (POST /user)"
-            smart_home.user_service -> smart_home.user_database "Сохранить данные о пользователе" 
+            user -> messenger.messenger_service "Создать нового пользователя (POST /user)"
+            messenger.messenger_service -> messenger.messenger_database "Сохранить данные о пользователе" 
         }
 
-        dynamic smart_home "UC02" "Удаление пользователя" {
+        dynamic messenger "UC02" "Удаление пользователя" {
             autoLayout
-            user -> smart_home.user_service "Удалить нового пользователя (DELETE /user)"
-            smart_home.user_service -> smart_home.user_database "Удалить данные о пользователе" 
+            user -> messenger.messenger_service "Удалить нового пользователя (DELETE /user)"
+            messenger.messenger_service -> messenger.messenger_database "Удалить данные о пользователе" 
         }
 
-        dynamic smart_home "UC03" "Сохранить данные о температуре" {
+        dynamic messenger "UC03" "Поиск пользователя" {
             autoLayout
-            sensor -> smart_home.temperature_service "Сохранить данные о температуре (POST /user)"
-            smart_home.temperature_service -> smart_home.smarthome_database "Сохранить данные о температуре" 
+            user -> messenger.messenger_service "Поиск пользователя (GET /user)"
+            messenger.messenger_service -> messenger.messenger_database "Поиск пользователя в БД" 
         }
 
-        dynamic smart_home "UC04" "Получить данные о температуре" {
+        # Чаты
+
+        dynamic messenger "UC04" "Получение чатов пользователя" {
             autoLayout
-            sensor -> smart_home.temperature_service "Получить данные о температуре (GET /user)"
-            smart_home.temperature_service -> smart_home.user_service "Проверить аутентификацию пользователя (GET /user)"
-            smart_home.temperature_service -> smart_home.smarthome_database "Получить данные о температуре" 
+            user -> messenger.messenger_service "Получение списка чатов (GET /chats)"
+            messenger.messenger_service -> messenger.messenger_database "Получение пагинированных данных о чатах" 
         }
 
+         dynamic messenger "UC05" "Создание чата" {
+            autoLayout
+            user -> messenger.messenger_service "Создать новый чат(POST /chat)"
+            messenger.messenger_service -> messenger.messenger_database "Сохранить данные о чате" 
+        }
+
+        # Сообщения
+
+        dynamic messenger "UC06" "Получение сообщений чата" {
+            autoLayout
+            user -> messenger.messenger_service "Получение сообщений (GET /messages)"
+            messenger.messenger_service -> messenger.messenger_database "Получение пагинированных данных о сообщениях" 
+        }
+        dynamic messenger "UC07" "Отправка сообщения в чат" {
+            autoLayout
+            user -> messenger.messenger_service "Отправка сообщения в чат (POST /message)"
+            messenger.messenger_service -> messenger.messenger_database "Сохранить данные о сообщении" 
+        }
 
         styles {
             element "database" {
